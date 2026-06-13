@@ -225,9 +225,22 @@ def analyze_apk(task_id, file_path):
         #llm reasoning
         #--------------------------
         prompt = f"""
+
         You are a senior Android malware analyst.
 
         Analyze the APK based on the following information:
+
+
+        Permissions:
+        {permissions}
+
+        api calls:
+        {api_calls}
+
+        intent actions:
+        {intent_actions}
+
+        
 
         Malware Risk Score:
         {risk_score:.2f}/100
@@ -238,11 +251,13 @@ def analyze_apk(task_id, file_path):
         Provide:
 
         1. Executive Summary
-        2. Threat Analysis
-        3. Potential Impact
-        4. Remediation Recommendations
+        2. Threat Classification
+        3. Likely Malware Family Behaviour
+        4. Explanation of why each SHAP feature is suspicious
+        5. Potential Impact on Users
+        6. Recommended Actions
 
-        Keep the report concise and professional.
+        Use clear technical language suitable for a SOC analyst.
         """
         print("generating llm report")
         try:
@@ -254,12 +269,13 @@ def analyze_apk(task_id, file_path):
         except Exception as llm_err:
             print(f"LLM report failed: {llm_err}")
             report_text = "Report generation failed."
+        print("llm report generated")
         
         
         # -------------------------
         # Save Results
         # -------------------------
-
+        print("saving results")
         task.status = "completed"
 
         task.malware_score = (risk_score)
@@ -269,6 +285,7 @@ def analyze_apk(task_id, file_path):
         task.llm_report = report_text
 
         db.commit()
+        print("results saved")  
 
     except Exception as e:
 
