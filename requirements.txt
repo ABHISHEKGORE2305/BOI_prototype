@@ -1,0 +1,15 @@
+androguard[magic,GUI]
+fastapi 
+uvicorn
+sqlalchemy
+python-multipart
+celery 
+redis
+lightgbm
+shap
+pandas
+numpy
+joblib
+langchain
+google-generativeai
+python-dotenv
