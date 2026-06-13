@@ -18,25 +18,28 @@ import os
 
 load_dotenv()
 
+BASE_DIR = os.path.dirname(
+    os.path.abspath(__file__)
+)
+
 GEMINI_API_KEY = os.getenv(
     "GEMINI_API_KEY"
 )
-
 
 genai.configure(
     api_key=GEMINI_API_KEY
 )
 
-model = genai.GenerativeModel(
+GEMINI_MODEL = genai.GenerativeModel(
     "gemini-2.5-flash"
 )
 
 MODEL = joblib.load(
-    "/Users/aspa/Desktop/abhishek/boi_prototype/models/malware_model.pkl"
+    os.path.join(BASE_DIR, "models", "malware_model.pkl")
 )
 
 with open(
-    "/Users/aspa/Desktop/abhishek/boi_prototype/models/feature_names.json",
+    os.path.join(BASE_DIR, "models", "feature_names.json"),
     "r"
 ) as f:
 
@@ -49,6 +52,7 @@ EXPLAINER = shap.TreeExplainer(MODEL)
 def analyze_apk(task_id, file_path):
 
     db = SessionLocal()
+    task = None
 
     try:
 
@@ -80,8 +84,8 @@ def analyze_apk(task_id, file_path):
 
                     class_name = (
                         method.get_class_name()
+                        .lstrip("L")
                         .replace("/", ".")
-                        .replace("L", "")
                         .replace(";", "")
                     )
 
@@ -241,12 +245,15 @@ def analyze_apk(task_id, file_path):
         Keep the report concise and professional.
         """
         print("generating llm report")
-        report = model.generate_content(
-            prompt
-        )
-        report_text = report.text
-
-        print("llm report generated")
+        try:
+            report = GEMINI_MODEL.generate_content(
+                prompt
+            )
+            report_text = report.text
+            print("llm report generated")
+        except Exception as llm_err:
+            print(f"LLM report failed: {llm_err}")
+            report_text = "Report generation failed."
         
         
         # -------------------------
@@ -274,5 +281,12 @@ def analyze_apk(task_id, file_path):
         raise e
 
     finally:
+
+        # Clean up uploaded APK file
+        try:
+            if os.path.exists(file_path):
+                os.remove(file_path)
+        except OSError:
+            pass
 
         db.close()

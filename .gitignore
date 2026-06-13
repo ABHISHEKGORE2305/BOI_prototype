@@ -1,9 +1,29 @@
+# Python
 venv/
 __pycache__/
 *.pyc
-*.apk
-*.csv
-*.pkl
+
+# Environment variables
 .env
-.DS_Store
+
+# SQLite
 *.db
+*.sqlite3
+
+# Redis
+dump.rdb
+
+# Uploads
+uploads/
+
+# Models (optional)
+models/*.pkl
+
+# macOS
+.DS_Store
+
+# Streamlit
+.streamlit/
+
+# Logs
+*.log
