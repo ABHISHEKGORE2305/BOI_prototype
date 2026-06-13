@@ -12,6 +12,24 @@ import shap
 
 
 # Load once at startup
+import google.generativeai as genai
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+GEMINI_API_KEY = os.getenv(
+    "GEMINI_API_KEY"
+)
+
+
+genai.configure(
+    api_key=GEMINI_API_KEY
+)
+
+model = genai.GenerativeModel(
+    "gemini-2.5-flash"
+)
 
 MODEL = joblib.load(
     "/Users/aspa/Desktop/abhishek/boi_prototype/models/malware_model.pkl"
@@ -199,6 +217,36 @@ def analyze_apk(task_id, file_path):
         )
         print("Top Features:", top_features)
 
+        #--------------------------
+        #llm reasoning
+        #--------------------------
+        prompt = f"""
+        You are a senior Android malware analyst.
+
+        Analyze the APK based on the following information:
+
+        Malware Risk Score:
+        {risk_score:.2f}/100
+
+        Top suspicious features:
+        {top_features}
+
+        Provide:
+
+        1. Executive Summary
+        2. Threat Analysis
+        3. Potential Impact
+        4. Remediation Recommendations
+
+        Keep the report concise and professional.
+        """
+        print("generating llm report")
+        report = model.generate_content(
+            prompt
+        )
+        report_text = report.text
+
+        print("llm report generated")
         
         
         # -------------------------
@@ -207,13 +255,11 @@ def analyze_apk(task_id, file_path):
 
         task.status = "completed"
 
-        task.malware_score = (
-            risk_score
-        )
+        task.malware_score = (risk_score)
 
-        task.shap_data = json.dumps(
-            top_features
-        )
+        task.shap_data = json.dumps(top_features)
+
+        task.llm_report = report_text
 
         db.commit()
 
