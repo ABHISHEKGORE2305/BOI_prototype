@@ -30,7 +30,6 @@ Combining static reverse engineering (**Androguard**), gradient-boosted decision
 - [Frontend Dashboard Walkthrough](#-frontend-dashboard-walkthrough)
 - [Configuration & Environment Variables](#-configuration--environment-variables)
 - [Troubleshooting & FAQ](#-troubleshooting--faq)
-- [License](#-license)
 
 ---
 
@@ -369,15 +368,3 @@ Verify that your `GEMINI_API_KEY` is set in the `.env` file in the root director
 
 If the FastAPI server (`http://127.0.0.1:8000`) is offline or unreachable when an APK is scanned, the dashboard automatically falls back to an offline simulated profile with mock threat intelligence data. Start the FastAPI backend and upload again to run live analysis.
 </details>
-
----
-
-## 👥 Contributors
-
-- **Abhishek Gore** ([@ABHISHEKGORE2305](https://github.com/ABHISHEKGORE2305))
-
----
-
-## 📄 License
-
-This project is licensed under the [MIT License](LICENSE) (or proprietary academic/research prototype license as configured by the repository owner).
