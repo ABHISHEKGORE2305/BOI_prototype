@@ -40,21 +40,21 @@ Nexus-Sec operates on an asynchronous microservices pipeline:
 
 ```mermaid
 flowchart TD
-    User([SOC Analyst / Client]) -->|Upload APK File| ReactUI[React 18 + Vite Dashboard]
-    ReactUI -->|POST /upload| FastAPI[FastAPI REST API Gateway]
-    FastAPI -->|Save APK & Insert Record| SQLite[(SQLite Task Database)]
-    FastAPI -->|Enqueue Task| RedisQueue[(Redis Message Broker)]
+    User(["SOC Analyst / Client"]) -->|Upload APK File| ReactUI["React 18 + Vite Dashboard"]
+    ReactUI -->|POST /upload| FastAPI["FastAPI REST API Gateway"]
+    FastAPI -->|Save APK & Insert Record| SQLite[("SQLite Task Database")]
+    FastAPI -->|Enqueue Task| RedisQueue[("Redis Message Broker")]
     
-    subgraph CeleryWorkerNode [Celery Async Worker (Solo Pool)]
-        RedisQueue -->|Pull Job| Worker[Celery Worker: analyze_apk]
-        Worker -->|Static Extraction| Androguard[Androguard Engine]
-        Androguard -->|Permissions, API Calls, Intents| FeatBuilder[Feature Vector Builder (215 Drebin Schema)]
-        FeatBuilder -->|Vector Matrix| LGBM[LightGBM Model (99% Accuracy)]
-        LGBM -->|Malware Probability Score| SHAP[SHAP TreeExplainer]
-        SHAP -->|Top 5 Feature Attributions| GenAI[Google Gemini 2.5 Flash LLM]
-        GenAI -->|SOC Threat Brief & Mitigation Guide| ResultsSaver[Result Aggregator]
+    subgraph CeleryWorkerNode ["Celery Async Worker (Solo Pool)"]
+        RedisQueue -->|Pull Job| Worker["Celery Worker: analyze_apk"]
+        Worker -->|Static Extraction| Androguard["Androguard Engine"]
+        Androguard -->|Permissions, API Calls, Intents| FeatBuilder["Feature Vector Builder (215 Drebin Schema)"]
+        FeatBuilder -->|Vector Matrix| LGBM["LightGBM Model (99% Accuracy)"]
+        LGBM -->|Malware Probability Score| SHAP["SHAP TreeExplainer"]
+        SHAP -->|Top 5 Feature Attributions| GenAI["Google Gemini 2.5 Flash LLM"]
+        GenAI -->|SOC Threat Brief & Mitigation Guide| ResultsSaver["Result Aggregator"]
         ResultsSaver -->|Update Score, SHAP & Report| SQLite
-        ResultsSaver -->|Secure Deletion| Cleanup[Purge Temp APK File]
+        ResultsSaver -->|Secure Deletion| Cleanup["Purge Temp APK File"]
     end
 
     ReactUI -->|Poll GET /status/:taskId| FastAPI
