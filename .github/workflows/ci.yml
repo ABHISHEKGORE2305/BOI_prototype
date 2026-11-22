@@ -43,6 +43,8 @@ jobs:
       - name: Test
         env:
           TEST_REDIS_URL: redis://localhost:6379/15
+          # The e2e tests score generated APKs with the model trained above
+          MODEL_DIR: /tmp/model
         run: pytest
 
   frontend:
