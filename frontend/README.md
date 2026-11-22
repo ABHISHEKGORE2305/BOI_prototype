@@ -1,8 +1,29 @@
-# React + Vite
+# Nexus-Sec dashboard
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React 18 + Vite client for the Nexus-Sec API. See the [root README](../README.md) for the full system.
 
-Currently, two official plugins are available:
+```bash
+npm install
+npm run dev      # http://localhost:5173, proxies /api to http://127.0.0.1:8000
+npm test         # Vitest + Testing Library
+npm run lint
+npm run build
+```
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Configuration (`.env`, see `.env.example`): `VITE_API_URL`, `VITE_PROXY_TARGET`, `VITE_MAX_UPLOAD_MB`.
+
+## Layout
+
+```text
+src/
+├── App.jsx                 # Upload → poll → result state machine
+├── api.js                  # REST client (/api/v1), error messages
+├── hooks/useTaskPolling.js # Polls a task with backoff until analysis + report settle
+├── components/             # Sidebar, Uploader, PipelineProgress, Dashboard and its panels
+├── lib/                    # Formatting, indicator reference text, remediation rules, validation
+├── data/demoResult.js      # Sample result shown only via "View a sample result"
+└── test/                   # Vitest suites
+```
+
+The dashboard never substitutes sample data for a real scan: failures and timeouts show an
+error, and demo mode is an explicit, labelled choice.
