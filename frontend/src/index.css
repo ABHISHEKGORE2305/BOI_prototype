@@ -720,6 +720,7 @@ body {
 }
 
 .warning-text { color: var(--orange); font-size: 0.85rem; }
+.loading-text { color: var(--text-secondary, inherit); }
 
 /* Focus visibility for keyboard users */
 :focus-visible {

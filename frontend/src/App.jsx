@@ -1,7 +1,6 @@
-import { useCallback, useEffect, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import { AlertTriangle, FlaskConical, X } from 'lucide-react';
 import { getModelInfo, listTasks, uploadApk } from './api';
-import Dashboard from './components/Dashboard';
 import PipelineProgress from './components/PipelineProgress';
 import Sidebar from './components/Sidebar';
 import { DEMO_TASK } from './data/demoResult';
@@ -9,6 +8,18 @@ import { isAnalysisDone, useTaskPolling } from './hooks/useTaskPolling';
 import { validateApk } from './lib/validate';
 
 const API_KEY_STORAGE = 'nexus-sec-api-key';
+
+// The dashboard pulls in Recharts and the Markdown renderer (most of the
+// bundle). Load it only once there is a result to show, and start fetching
+// it as soon as a scan begins so it's usually ready by the time it's needed.
+const loadDashboard = () => import('./components/Dashboard');
+const Dashboard = lazy(loadDashboard);
+
+function prefetchDashboard() {
+  loadDashboard().catch(() => {
+    // Only a warm-up; a real failure surfaces when the dashboard renders
+  });
+}
 
 function readStoredKey() {
   try {
@@ -102,6 +113,7 @@ export default function App({ pollOptions }) {
   const handleFile = async (file) => {
     reset();
     setSelectedName(file.name);
+    prefetchDashboard();
 
     const problem = validateApk(file);
     if (problem) {
@@ -123,6 +135,7 @@ export default function App({ pollOptions }) {
 
   const selectTask = (id) => {
     reset();
+    prefetchDashboard();
     setTaskId(id);
   };
 
@@ -205,7 +218,15 @@ export default function App({ pollOptions }) {
           )}
         </div>
 
-        {content}
+        <Suspense
+          fallback={
+            <p className="nexus-card loading-text" role="status">
+              Loading results…
+            </p>
+          }
+        >
+          {content}
+        </Suspense>
       </main>
     </div>
   );

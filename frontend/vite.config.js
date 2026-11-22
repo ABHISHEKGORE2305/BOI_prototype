@@ -7,9 +7,13 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
-          charts: ['recharts'],
-          markdown: ['react-markdown', 'remark-gfm'],
+        // React is shared by every chunk and must not be filed under a lazy
+        // vendor chunk, or the entry would have to download that chunk too
+        manualChunks(id) {
+          if (/[\\/]node_modules[\\/](react|react-dom|scheduler)[\\/]/.test(id)) return 'react';
+          if (/[\\/]node_modules[\\/](recharts|victory-vendor|d3-[^\\/]+)[\\/]/.test(id)) return 'charts';
+          if (/[\\/]node_modules[\\/](react-markdown|remark-[^\\/]+|micromark[^\\/]*|mdast-[^\\/]+)[\\/]/.test(id)) return 'markdown';
+          return undefined;
         },
       },
     },
