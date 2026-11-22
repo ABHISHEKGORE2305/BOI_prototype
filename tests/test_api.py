@@ -7,6 +7,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from nexus_sec import api
+from nexus_sec import ml
 from nexus_sec import config
 from nexus_sec.api import app
 from nexus_sec.database import SessionLocal
@@ -50,7 +51,7 @@ def trained_model(monkeypatch):
         "global_importance": [{"feature": "SEND_SMS", "importance": 0.5}],
         "feature_prevalence": {"SEND_SMS": 0.1, "INTERNET": 0.9},
     }
-    monkeypatch.setattr(api, "model_metadata", lambda: metadata)
+    monkeypatch.setattr(ml, "model_metadata", lambda: metadata)
     return metadata
 
 
@@ -263,7 +264,7 @@ def test_model_info(trained_model):
 
 
 def test_model_info_without_trained_model(monkeypatch):
-    monkeypatch.setattr(api, "model_metadata", lambda: None)
+    monkeypatch.setattr(ml, "model_metadata", lambda: None)
     assert client.get("/api/v1/model").status_code == 503
 
 
