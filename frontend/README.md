@@ -12,6 +12,16 @@ npm run build
 
 Configuration (`.env`, see `.env.example`): `VITE_API_URL`, `VITE_PROXY_TARGET`, `VITE_MAX_UPLOAD_MB`.
 
+## Features
+
+- **Sidebar** — drag-and-drop uploader with client-side type/size checks, API key field (kept in session storage), recent-scan history, JSON export and print-to-PDF.
+- **Progress** — driven by the real task status; polls with backoff, no fixed timeout.
+- **Summary** — calibrated malware probability, verdict against the model's threshold, indicator count, analysis time / cache status.
+- **SHAP chart** — top attributions, marking whether each feature was present or contributed by its absence.
+- **GenAI report** — rendered Markdown; shows pending / skipped / failed states without hiding the verdict.
+- **Tabs** — detected indicators (with reference descriptions and SHAP values), APK metadata and certificates, remediation checklist derived from the verdict and indicators, model metrics and drift.
+- **Demo** — "View a sample result" shows a clearly labelled sample. Failed or unreachable scans show an error; sample data is **never** substituted for a real result.
+
 ## Layout
 
 ```text

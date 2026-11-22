@@ -63,6 +63,15 @@ delivered. Items that could not be completed are listed at the end with the reas
 - Extra analyst metadata (certificates, SDK levels, native libraries, debuggable flag, signature schemes) extracted and displayed. It is deliberately **not** fed to the model, which can only use the 215 Drebin features it was trained on.
 - Notebook and unused `label_encoder.pkl` retired in favour of `train.py`.
 
+## Phase 6 — Portfolio polish ✅
+
+- `api.py` (447 lines) split into `routers/` (thin HTTP handlers) and `services/` (uploads, result cache, enqueueing).
+- Redis sliding-window rate limiter shared by all API replicas (see Phase 4).
+- End-to-end tests: generated APKs with a compiled binary manifest go through the API and the real Celery pipeline. No malware samples in the repo.
+- Tests for training (dedup, artifacts, deterministic versions) and evaluation; branch coverage 80% → 90% with an 85% CI floor and Codecov upload.
+- Lazy-loaded dashboard: initial JS 216 kB → 54 kB gzipped.
+- README cut to an overview; reference material moved to `docs/API.md`, `docs/SECURITY.md`, `docs/OPERATIONS.md`.
+
 ---
 
 ## Not done, and why
