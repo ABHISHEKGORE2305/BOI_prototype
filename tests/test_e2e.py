@@ -34,12 +34,9 @@ PLAIN_APP = {
 }
 
 
-@pytest.fixture(scope="module", autouse=True)
-def trained_model():
-    if not os.path.exists(config.MODEL_PATH):
-        if os.getenv("CI"):
-            pytest.fail(f"CI must train a model before the e2e tests ({config.MODEL_PATH})")
-        pytest.skip("No trained model; run `python -m nexus_sec.train`")
+@pytest.fixture(autouse=True)
+def _model(real_model):
+    return real_model
 
 
 @pytest.fixture

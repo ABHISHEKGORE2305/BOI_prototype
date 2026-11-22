@@ -28,3 +28,12 @@ ignore = [
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["S"]
 "alembic/*" = ["E501"]
+
+[tool.coverage.run]
+source = ["nexus_sec"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+fail_under = 85

@@ -36,3 +36,17 @@ def categories():
 @pytest.fixture(autouse=True)
 def _reset_rate_limiter():
     upload_limiter.reset()
+
+
+@pytest.fixture(scope="session")
+def real_model():
+    """The trained model in MODEL_DIR; CI trains one before running tests."""
+
+    if not os.path.exists(config.MODEL_PATH):
+        if os.getenv("CI"):
+            pytest.fail(f"CI must train a model before running tests ({config.MODEL_PATH})")
+        pytest.skip("No trained model; run `python -m nexus_sec.train`")
+
+    from nexus_sec.ml import load_model
+
+    return load_model()

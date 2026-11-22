@@ -1,6 +1,7 @@
 # 🛡️ Nexus-Sec: Android Malware Analysis & Threat Intelligence Platform
 
 [![CI](https://github.com/ABHISHEKGORE2305/BOI_prototype/actions/workflows/ci.yml/badge.svg)](https://github.com/ABHISHEKGORE2305/BOI_prototype/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/ABHISHEKGORE2305/BOI_prototype/graph/badge.svg)](https://codecov.io/gh/ABHISHEKGORE2305/BOI_prototype)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg?logo=python&logoColor=white)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110%2B-009688.svg?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![React](https://img.shields.io/badge/React-18.3-61DAFB.svg?logo=react&logoColor=black)](https://react.dev/)
