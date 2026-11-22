@@ -50,6 +50,9 @@ API_KEYS = _env_list("API_KEYS")
 # Uploads allowed per client (API key, or IP when auth is off) per minute
 UPLOAD_RATE_LIMIT_PER_MINUTE = _env_int("UPLOAD_RATE_LIMIT_PER_MINUTE", 10)
 
+# "redis" shares the limit across API replicas; "memory" is per process
+RATE_LIMIT_BACKEND = os.getenv("RATE_LIMIT_BACKEND", "redis")
+
 # --- Worker -----------------------------------------------------------------
 
 # Seconds before a running analysis is aborted and marked failed

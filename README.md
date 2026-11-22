@@ -301,7 +301,7 @@ Report status (once completed): `pending` → `completed` | `skipped` | `failed`
 | Authorization | Tasks belong to the uploading key; other users get `404`. |
 | Unguessable IDs | Task IDs are random UUIDs. |
 | Upload validation | `.apk` extension, ZIP magic bytes, streamed size cap, server-generated file names. |
-| Rate limiting | `UPLOAD_RATE_LIMIT_PER_MINUTE` per key (or client IP). In-memory: per API process. |
+| Rate limiting | `UPLOAD_RATE_LIMIT_PER_MINUTE` per key (or client IP). Sliding window in Redis (atomic Lua script, server clock), shared across API replicas; fails open if Redis is down. `RATE_LIMIT_BACKEND=memory` for a single process. |
 | Worker isolation | Analysis worker: internal network only, read-only root FS, all capabilities dropped, `no-new-privileges`, memory/CPU/PID limits, non-root user. |
 | LLM prompt hardening | Only matched feature names from the fixed 215-entry vocabulary reach the prompt — never APK strings, package or app names. |
 | CORS | Explicit origin allow-list; Docker deployment is same-origin through nginx. |
@@ -332,6 +332,7 @@ Backend settings are read from the environment or `.env` (see `.env.example`).
 | `REDIS_URL` | Celery broker | `redis://localhost:6379/0` |
 | `API_KEYS` | `name:key` pairs, comma-separated; empty disables auth | — |
 | `UPLOAD_RATE_LIMIT_PER_MINUTE` | Uploads per key / IP per minute (0 = unlimited) | `10` |
+| `RATE_LIMIT_BACKEND` | `redis` (shared across replicas) or `memory` (per process) | `redis` |
 | `UPLOAD_DIR` | Shared by API and analysis worker | `<repo>/uploads` |
 | `MAX_UPLOAD_MB` | Maximum APK size | `100` |
 | `CORS_ORIGINS` | Allowed browser origins | `http://localhost:5173,http://127.0.0.1:5173` |

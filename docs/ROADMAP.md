@@ -45,7 +45,7 @@ delivered. Items that could not be completed are listed at the end with the reas
 ## Phase 4 — Security & operations ✅
 
 - API-key auth (`API_KEYS`), per-key task ownership, random UUID task IDs.
-- Upload rate limiting (`429` + `Retry-After`).
+- Upload rate limiting (`429` + `Retry-After`): a Redis sliding window (atomic Lua script on the server clock) shared across API replicas, failing open if Redis is unavailable.
 - SHA-256 result cache, keyed by model version.
 - Analysis worker isolated: internal-only network, read-only FS, no capabilities, resource limits. The LLM step runs in a separate worker that never mounts uploads.
 - Classification and LLM report split into separate tasks/queues; report retried with exponential backoff, and a Gemini outage never blocks a verdict.
@@ -74,6 +74,5 @@ delivered. Items that could not be completed are listed at the end with the reas
 | Features beyond the Drebin 215 | Needs training data containing those features; the metadata is already extracted for when it exists. |
 | Malware-family classification | The dataset has no family labels; the old UI's family name was hard-coded. |
 | Dataset in Git LFS | 6 MB is within normal git limits; moving it would rewrite history for all clones. Revisit if more datasets are added. |
-| Rate limiting across API replicas | Current limiter is in-memory per process; move to Redis when running more than one API container. |
 | Domain-restricted LLM egress | The `llm-worker` has general internet egress; restrict to Google's API endpoints with an egress proxy in production. |
 | Secrets management | Keys come from env / `.env`; use a secrets manager (Vault, cloud KMS) in production. |

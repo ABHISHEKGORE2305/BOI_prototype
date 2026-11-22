@@ -12,6 +12,7 @@ x-backend: &backend
   environment: &backend-env
     DATABASE_URL: postgresql+psycopg://nexus:${POSTGRES_PASSWORD:-nexus}@postgres:5432/nexus
     REDIS_URL: redis://redis:6379/0
+    RATE_LIMIT_BACKEND: redis
     API_KEYS: ${API_KEYS:-}
     LOG_FORMAT: json
   volumes:

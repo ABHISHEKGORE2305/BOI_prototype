@@ -8,6 +8,7 @@ os.environ["DATABASE_URL"] = f"sqlite:///{os.path.join(_tmp, 'test.db')}"
 os.environ["UPLOAD_DIR"] = os.path.join(_tmp, "uploads")
 os.environ["GEMINI_API_KEY"] = ""
 os.environ["API_KEYS"] = ""
+os.environ["RATE_LIMIT_BACKEND"] = "memory"
 
 import pytest  # noqa: E402
 
