@@ -1,0 +1,26 @@
+[project]
+name = "nexus-sec"
+version = "1.0.0"
+description = "Android APK static analysis, ML malware classification and threat intelligence"
+requires-python = ">=3.10"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+extend-exclude = ["frontend"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "S"]
+ignore = [
+    "I001",  # one import per line is the house style; not ruff's sorted blocks
+    "S101",  # assert in tests
+    "B008",  # FastAPI Depends()/File() in defaults
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S"]
+"alembic/*" = ["E501"]
