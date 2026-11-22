@@ -1,0 +1,134 @@
+# One-command stack:  docker compose up --build   ->  http://localhost:8080
+#
+# Optional settings come from a .env file next to this one:
+#   GEMINI_API_KEY, GEMINI_MODEL, API_KEYS, POSTGRES_PASSWORD
+
+name: nexus-sec
+
+x-backend: &backend
+  build: .
+  image: nexus-sec-backend
+  restart: unless-stopped
+  environment: &backend-env
+    DATABASE_URL: postgresql+psycopg://nexus:${POSTGRES_PASSWORD:-nexus}@postgres:5432/nexus
+    REDIS_URL: redis://redis:6379/0
+    RATE_LIMIT_BACKEND: redis
+    API_KEYS: ${API_KEYS:-}
+    LOG_FORMAT: json
+  volumes:
+    - uploads:/data/uploads
+
+# Containers that never need to write outside /tmp and the uploads volume
+x-hardened: &hardened
+  read_only: true
+  tmpfs:
+    - /tmp
+  cap_drop:
+    - ALL
+  security_opt:
+    - no-new-privileges:true
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: nexus
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-nexus}
+      POSTGRES_DB: nexus
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nexus -d nexus"]
+      interval: 5s
+      retries: 10
+    networks: [internal]
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 10
+    networks: [internal]
+
+  api:
+    <<: *backend
+    command: >
+      sh -c "alembic upgrade head &&
+             uvicorn nexus_sec.api:app --host 0.0.0.0 --port 8000
+             --proxy-headers --forwarded-allow-ips='*'"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=3)"]
+      interval: 10s
+      retries: 10
+      start_period: 20s
+    networks: [internal]
+
+  # Parses untrusted APKs: no internet access, read-only root FS,
+  # no capabilities, bounded resources
+  analysis-worker:
+    <<: [*backend, *hardened]
+    command: celery -A nexus_sec.worker worker -Q analysis --loglevel=INFO
+    environment:
+      <<: *backend-env
+      WORKER_METRICS_PORT: "9100"
+    mem_limit: 2g
+    cpus: 2
+    pids_limit: 256
+    depends_on:
+      api:
+        condition: service_healthy
+    networks: [internal]
+
+  # Calls Gemini; never sees the APK files
+  llm-worker:
+    <<: [*backend, *hardened]
+    command: celery -A nexus_sec.worker worker -Q llm --loglevel=INFO
+    environment:
+      <<: *backend-env
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.5-flash}
+    volumes: []
+    mem_limit: 1g
+    depends_on:
+      api:
+        condition: service_healthy
+    networks: [internal, egress]
+
+  # Hourly retention clean-up (RESULT_RETENTION_DAYS)
+  beat:
+    <<: [*backend, *hardened]
+    command: celery -A nexus_sec.worker beat --loglevel=INFO --schedule /tmp/celerybeat-schedule
+    volumes: []
+    depends_on:
+      api:
+        condition: service_healthy
+    networks: [internal]
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-8080}:80"
+    depends_on:
+      api:
+        condition: service_healthy
+    networks: [internal, public]
+
+networks:
+  # No route to the internet
+  internal:
+    internal: true
+  egress: {}
+  public: {}
+
+volumes:
+  pgdata:
+  uploads:

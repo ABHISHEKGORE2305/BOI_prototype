@@ -1,32 +1,33 @@
 # Python
 venv/
+.venv/
 __pycache__/
 *.pyc
+.pytest_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
 
 # Environment variables
 .env
+frontend/.env
+frontend/.env.local
 
-# SQLite
+# Databases
 *.db
 *.sqlite3
 
-# Redis
+# Redis / Celery
 dump.rdb
+celerybeat-schedule*
 
 # Uploads
 uploads/
 
-# Models (optional)
+# Trained model (regenerate with `python -m nexus_sec.train`; metrics.json
+# and feature_names.json are committed)
 models/*.pkl
-
-# macOS
-.DS_Store
-
-# Streamlit
-.streamlit/
-
-# Logs
-*.log
 
 # Logs
 logs
@@ -35,14 +36,14 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
-lerna-debug.log*
 
+# Frontend build
 node_modules
 dist
 dist-ssr
 *.local
 
-# Editor directories and files
+# Editor / OS
 .vscode/*
 !.vscode/extensions.json
 .idea

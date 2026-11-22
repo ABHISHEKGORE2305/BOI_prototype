@@ -29,10 +29,20 @@ export default [
       ...react.configs['jsx-runtime'].rules,
       ...reactHooks.configs.recommended.rules,
       'react/jsx-no-target-blank': 'off',
+      // PropTypes are deprecated in React 19; props are documented at call sites
+      'react/prop-types': 'off',
       'react-refresh/only-export-components': [
         'warn',
         { allowConstantExport: true },
       ],
     },
+  },
+  {
+    files: ['src/test/**/*.{js,jsx}'],
+    languageOptions: { globals: { ...globals.node, ...globals.vitest } },
+  },
+  {
+    files: ['vite.config.js'],
+    languageOptions: { globals: globals.node },
   },
 ]
