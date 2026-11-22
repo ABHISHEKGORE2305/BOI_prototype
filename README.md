@@ -23,7 +23,7 @@ Upload an Android APK and get back a calibrated malware probability, the indicat
 - **Untrusted input is isolated.** APKs are parsed in a worker with no internet route, a read-only filesystem and no Linux capabilities. The LLM runs in a separate worker that never sees the APK, so a Gemini outage never delays a verdict.
 - **Rate limiting that survives scaling out.** A Redis sliding window (one atomic Lua script, server clock) is shared by every API replica and fails open if Redis is down.
 - **Tested end to end.** 90% branch coverage. E2E tests generate APKs with a compiled binary manifest, upload them through the API, and run the real Androguard → LightGBM → SHAP pipeline, so no malware samples are needed in the repo. Rate-limiter tests also run against a real Redis in CI.
-- **Fast first load.** Charts and Markdown are lazy-loaded with the first result: initial JS dropped from **216 kB to 54 kB** gzipped.
+- **Fast first load.** The results view is lazy-loaded and the SHAP chart is plain HTML/CSS instead of a charting library: initial JS dropped from **216 kB to 54 kB** gzipped, and the 350 kB Recharts dependency is gone. Fonts are self-hosted, so the CSP allows no third-party origins.
 
 The full list of problems found and how each was fixed is in [docs/ROADMAP.md](docs/ROADMAP.md).
 
@@ -60,7 +60,7 @@ flowchart TD
 
 | Layer | Technologies |
 | :--- | :--- |
-| Frontend | React 18, Vite, Recharts, react-markdown, Vitest + Testing Library, nginx |
+| Frontend | React 18, Vite, react-markdown, Atkinson Hyperlegible (self-hosted), Vitest + Testing Library, nginx |
 | API | FastAPI, Pydantic, SQLAlchemy 2, Alembic, prometheus-client |
 | Workers | Celery 5 (analysis + llm queues, beat), Redis |
 | Analysis & ML | Androguard 4, LightGBM, scikit-learn, SHAP, Google Gen AI SDK |

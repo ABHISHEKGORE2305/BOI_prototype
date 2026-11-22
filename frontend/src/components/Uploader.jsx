@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { UploadCloud } from 'lucide-react';
+import { FileUp } from 'lucide-react';
 import { MAX_UPLOAD_MB } from '../api';
 
-export default function Uploader({ onFile, disabled, selectedName }) {
+export default function Uploader({ onFile, disabled }) {
   const [dragging, setDragging] = useState(false);
 
   const pick = (file) => {
@@ -11,7 +11,7 @@ export default function Uploader({ onFile, disabled, selectedName }) {
 
   return (
     <div
-      className={`file-uploader ${dragging ? 'dragging' : ''} ${disabled ? 'disabled' : ''}`}
+      className={`dropzone ${dragging ? 'is-dragging' : ''} ${disabled ? 'is-disabled' : ''}`}
       onDragOver={(e) => {
         e.preventDefault();
         if (!disabled) setDragging(true);
@@ -23,11 +23,9 @@ export default function Uploader({ onFile, disabled, selectedName }) {
         pick(e.dataTransfer.files[0]);
       }}
     >
-      <UploadCloud size={32} className="uploader-icon" aria-hidden="true" />
-      <div className="uploader-text" title={selectedName || undefined}>
-        {selectedName || 'Select APK target'}
-      </div>
-      <div className="uploader-subtext">Drag & drop or browse · max {MAX_UPLOAD_MB} MB</div>
+      <FileUp size={28} className="dropzone-icon" aria-hidden="true" />
+      <span className="dropzone-title">Drop an APK here, or click to choose one</span>
+      <span className="hint">Android packages up to {MAX_UPLOAD_MB} MB</span>
       <input
         type="file"
         accept=".apk,application/vnd.android.package-archive"

@@ -9,42 +9,54 @@ function Row({ label, children }) {
   );
 }
 
+function plural(count = 0, singular, pluralForm = `${singular}s`) {
+  return `${count} ${count === 1 ? singular : pluralForm}`;
+}
+
 export default function ApkInfoPanel({ task }) {
   const info = task.apk_info;
 
   if (!info) {
-    return <p className="muted">No APK metadata was recorded for this scan.</p>;
+    return <p className="muted">No app details were recorded for this scan.</p>;
   }
 
   const counts = info.component_counts || {};
 
   return (
-    <div className="table-container animate-fade">
+    <div className="panel-stack">
       <dl className="info-grid">
-        <Row label="Package"><span className="mono">{info.package}</span></Row>
+        <Row label="Package"><span className="code">{info.package}</span></Row>
         <Row label="App name">{info.app_name}</Row>
         <Row label="Version">
-          {info.version_name} {info.version_code && <span className="muted">({info.version_code})</span>}
+          {info.version_name} {info.version_code && <span className="muted">(code {info.version_code})</span>}
         </Row>
-        <Row label="SDK">min {info.min_sdk ?? '?'} · target {info.target_sdk ?? '?'}</Row>
+        <Row label="Android SDK">
+          Minimum {info.min_sdk ?? 'not set'}, target {info.target_sdk ?? 'not set'}
+        </Row>
         <Row label="Debuggable">
-          {info.debuggable ? <span className="badge badge-high">yes</span> : 'no'}
+          {info.debuggable ? <span className="tag tone-high">Yes</span> : 'No'}
         </Row>
-        <Row label="Signature schemes">{info.signature_schemes?.join(', ') || 'unsigned'}</Row>
+        <Row label="Signature schemes">
+          {info.signature_schemes?.length ? info.signature_schemes.join(', ') : 'Unsigned'}
+        </Row>
         <Row label="Components">
-          {counts.activities} activities · {counts.services} services · {counts.receivers} receivers ·{' '}
-          {counts.providers} providers
+          {[
+            plural(counts.activities, 'activity', 'activities'),
+            plural(counts.services, 'service'),
+            plural(counts.receivers, 'receiver'),
+            plural(counts.providers, 'provider'),
+          ].join(', ')}
         </Row>
         <Row label="DEX files">{info.dex_files}</Row>
-        <Row label="SHA-256"><span className="mono break">{task.sha256}</span></Row>
+        <Row label="SHA-256"><span className="code">{task.sha256}</span></Row>
         <Row label="Scanned">{formatDateTime(task.created_at)}</Row>
       </dl>
 
-      <div className="table-section">
-        <h4>Signing certificates</h4>
+      <section>
+        <h3>Signing certificates</h3>
         {info.certificates?.length ? (
           <div className="table-scroll">
-            <table className="cyber-table">
+            <table className="data-table">
               <thead>
                 <tr>
                   <th scope="col">Subject</th>
@@ -59,31 +71,35 @@ export default function ApkInfoPanel({ task }) {
                     <td>{cert.subject}</td>
                     <td>{cert.issuer}</td>
                     <td>{formatDateTime(cert.not_after)}</td>
-                    <td className="mono break">{cert.sha256}</td>
+                    <td className="code">{cert.sha256}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         ) : (
-          <p className="muted">No certificates found.</p>
+          <p className="muted">No signing certificates found.</p>
         )}
-      </div>
+      </section>
 
-      <div className="table-section">
-        <h4>Native libraries ({info.native_libraries?.length || 0})</h4>
+      <section>
+        <h3>
+          Native libraries <span className="muted">{info.native_libraries?.length || 0}</span>
+        </h3>
         {info.native_libraries?.length ? (
-          <ul className="mono-list">
+          <ul className="code-list code">
             {info.native_libraries.map((lib) => <li key={lib}>{lib}</li>)}
           </ul>
         ) : (
           <p className="muted">None.</p>
         )}
-      </div>
+      </section>
 
-      <details className="table-section">
-        <summary>All declared permissions ({info.permissions?.length || 0})</summary>
-        <ul className="mono-list">
+      <details>
+        <summary>
+          All declared permissions <span className="muted">{info.permissions?.length || 0}</span>
+        </summary>
+        <ul className="code-list code">
           {info.permissions?.map((perm) => <li key={perm}>{perm}</li>)}
         </ul>
       </details>

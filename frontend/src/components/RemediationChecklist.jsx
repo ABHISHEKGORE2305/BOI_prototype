@@ -10,27 +10,28 @@ export default function RemediationChecklist({ task }) {
   const percent = steps.length ? Math.round((done / steps.length) * 100) : 0;
 
   return (
-    <div className="remediation-container animate-fade">
-      <p className="card-caption">
-        Steps derived from the verdict and the indicators detected in this APK.
-      </p>
-      <div className="remediation-progress">
+    <div>
+      <p className="muted">Suggested next steps for this verdict and the indicators found.</p>
+      <div className="checklist-progress">
         <div
-          className="progress-bar-container"
+          className="meter"
           role="progressbar"
+          aria-label="Checklist progress"
           aria-valuenow={percent}
           aria-valuemin={0}
           aria-valuemax={100}
         >
-          <div className={`progress-bar-fill ${percent === 100 ? 'complete' : ''}`} style={{ width: `${percent}%` }} />
+          <div className={`meter-fill ${percent === 100 ? 'is-complete' : ''}`} style={{ width: `${percent}%` }} />
         </div>
-        <span className="progress-label">{percent}% complete</span>
+        <span>
+          {done} of {steps.length} done
+        </span>
       </div>
 
-      <ul className="remediation-list">
+      <ul className="checklist">
         {steps.map((step, index) => (
           <li key={step}>
-            <label className={`checklist-item ${checked[index] ? 'checked' : ''}`}>
+            <label className={checked[index] ? 'is-checked' : ''}>
               <input
                 type="checkbox"
                 checked={checked[index]}
