@@ -1,76 +1,68 @@
-import { Info } from 'lucide-react';
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts';
 import { shortFeatureName } from '../lib/format';
 
-const RED = '#ff4d4d';
-const CYAN = '#00d2ff';
+const TOP_N = 10;
+
+function formatValue(value) {
+  return `${value > 0 ? '+' : value < 0 ? '−' : ''}${Math.abs(value).toFixed(2)}`;
+}
 
 export default function ShapChart({ shapData, features }) {
   const present = new Set(Object.values(features || {}).flat());
 
-  const data = Object.entries(shapData || {})
-    .map(([feature, value]) => ({
-      feature,
-      name: shortFeatureName(feature, 34),
-      value: Number(value.toFixed(4)),
-      present: present.has(feature),
-    }))
+  const rows = Object.entries(shapData || {})
+    .map(([feature, value]) => ({ feature, value, present: present.has(feature) }))
     .sort((a, b) => Math.abs(b.value) - Math.abs(a.value))
-    .slice(0, 10);
+    .slice(0, TOP_N);
+
+  const max = Math.max(...rows.map((row) => Math.abs(row.value)), 1e-9);
 
   return (
-    <div className="nexus-card">
-      <h3 className="card-title">
-        <Info size={16} className="accent-cyan" aria-hidden="true" /> Why the model decided this (SHAP)
-      </h3>
-      <p className="card-caption">
-        Red bars push towards malware, blue towards benign. Features marked “absent” contribute by
-        <em> not </em> being present.
-      </p>
+    <section aria-labelledby="why-heading">
+      <div className="section-head">
+        <h2 id="why-heading">Why the model decided this</h2>
+        <p>
+          The indicators that moved the score most (SHAP values), pushing it towards benign or
+          malware. An indicator can also count by being absent from the app.
+        </p>
+      </div>
 
-      {data.length === 0 ? (
-        <p className="muted">No attribution data.</p>
+      {rows.length === 0 ? (
+        <p className="muted">No attribution data for this scan.</p>
       ) : (
-        <div className="chart-wrapper">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={data} layout="vertical" margin={{ top: 5, right: 15, left: 15, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" horizontal={false} />
-              <XAxis type="number" stroke="#9ca3af" fontSize={10} tickLine={false} />
-              <YAxis dataKey="name" type="category" stroke="#9ca3af" fontSize={9} width={190} tickLine={false} />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: '#0c0f17',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  borderRadius: '8px',
-                  color: '#fff',
-                  fontSize: '11px',
-                  fontFamily: 'monospace',
-                }}
-                cursor={{ fill: 'rgba(255,255,255,0.02)' }}
-                formatter={(value, _name, { payload }) => [
-                  `${value > 0 ? '+' : ''}${value} (${payload.present ? 'present' : 'absent'})`,
-                  payload.feature,
-                ]}
-                labelFormatter={() => ''}
-              />
-              <Bar dataKey="value" radius={[0, 4, 4, 0]}>
-                {data.map((entry) => (
-                  <Cell key={entry.feature} fill={entry.value > 0 ? RED : CYAN} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
+        <>
+          <div className="shap-row shap-legend" aria-hidden="true">
+            <span />
+            <span className="shap-legend-track">
+              <span>← Benign</span>
+              <span>Malware →</span>
+            </span>
+            <span />
+          </div>
+          <ol className="shap-list">
+            {rows.map((row) => {
+              const width = `${(Math.abs(row.value) / max) * 50}%`;
+              const direction = row.value >= 0 ? 'malware' : 'benign';
+              return (
+                <li key={row.feature} className="shap-row">
+                  <span className="shap-name">
+                    <span className="code" title={row.feature}>
+                      {shortFeatureName(row.feature, 40)}
+                    </span>
+                    <span className="shap-presence">{row.present ? 'Present' : 'Absent'}</span>
+                  </span>
+                  <span className="shap-track" aria-hidden="true">
+                    <span className={`shap-bar is-${direction}`} style={{ width }} />
+                  </span>
+                  <span className={`shap-value towards-${direction}`}>
+                    {formatValue(row.value)}
+                    <span className="visually-hidden"> towards {direction}</span>
+                  </span>
+                </li>
+              );
+            })}
+          </ol>
+        </>
       )}
-    </div>
+    </section>
   );
 }

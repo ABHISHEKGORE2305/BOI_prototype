@@ -20,40 +20,43 @@ function DriftReport({ apiKey }) {
   const { loading, drift, error } = state;
 
   return (
-    <div className="table-section">
-      <h4>Feature drift</h4>
-      <p className="card-caption">
+    <section>
+      <h3>Feature drift</h3>
+      <p className="muted">
         Compares how often each indicator appears in recent scans with the training data. Large
-        shifts mean the model is seeing apps unlike those it learned from.
+        shifts mean the model is seeing apps unlike the ones it learned from.
       </p>
-      <button type="button" className="btn-small btn-wide" onClick={load} disabled={loading}>
-        <Activity size={14} aria-hidden="true" /> {loading ? 'Computing…' : 'Compute drift'}
-      </button>
-      {error && <p className="warning-text">{error}</p>}
-      {drift && drift.samples === 0 && <p className="muted">No completed scans yet.</p>}
+      <p className="drift-action">
+        <button type="button" className="btn" onClick={load} disabled={loading}>
+          <Activity size={16} aria-hidden="true" /> {loading ? 'Comparing…' : 'Compare recent scans'}
+        </button>
+      </p>
+      {error && <p className="inline-warning">{error}</p>}
+      {drift && drift.samples === 0 && <p className="muted">No completed scans to compare yet.</p>}
       {drift && drift.samples > 0 && (
         <>
-          <p className="muted small">
-            {drift.samples} distinct scans · mean absolute shift {pct(drift.mean_abs_diff)}
+          <p className="hint">
+            Based on {drift.samples} distinct scans. Mean absolute shift {pct(drift.mean_abs_diff)}.
           </p>
           <div className="table-scroll">
-            <table className="cyber-table">
+            <table className="data-table">
               <thead>
                 <tr>
                   <th scope="col">Indicator</th>
-                  <th scope="col">Training</th>
-                  <th scope="col">Recent scans</th>
-                  <th scope="col">Shift</th>
+                  <th scope="col" className="num">Training</th>
+                  <th scope="col" className="num">Recent scans</th>
+                  <th scope="col" className="num">Shift</th>
                 </tr>
               </thead>
               <tbody>
                 {drift.features.map((row) => (
                   <tr key={row.feature}>
-                    <td className="mono">{row.feature}</td>
-                    <td>{pct(row.train)}</td>
-                    <td>{pct(row.live)}</td>
-                    <td className={row.diff > 0 ? 'text-high' : 'text-cyan'}>
-                      {row.diff > 0 ? '+' : ''}{pct(row.diff)}
+                    <td className="code">{row.feature}</td>
+                    <td className="num">{pct(row.train)}</td>
+                    <td className="num">{pct(row.live)}</td>
+                    <td className="num">
+                      {row.diff > 0 ? '+' : ''}
+                      {pct(row.diff)}
                     </td>
                   </tr>
                 ))}
@@ -62,57 +65,60 @@ function DriftReport({ apiKey }) {
           </div>
         </>
       )}
-    </div>
+    </section>
   );
 }
 
 export default function ModelPanel({ model, modelError, apiKey }) {
   if (!model) {
-    return <p className="muted">Model information unavailable{modelError ? `: ${modelError}` : '.'}</p>;
+    return <p className="muted">Model information is unavailable{modelError ? `: ${modelError}` : '.'}</p>;
   }
 
   const atThreshold = model.metrics.at_threshold || {};
+  const maxImportance = model.global_importance[0]?.importance || 1;
 
   return (
-    <div className="table-container animate-fade">
+    <div className="panel-stack">
       <dl className="info-grid">
         <dt>Version</dt>
-        <dd className="mono">{model.version}</dd>
+        <dd className="code">{model.version}</dd>
         <dt>Trained</dt>
         <dd>{formatDateTime(model.trained_at)}</dd>
         <dt>Decision threshold</dt>
         <dd>
           {(model.threshold * 100).toFixed(1)}
           {model.max_fpr != null && (
-            <span className="muted"> (tuned for ≤ {pct(model.max_fpr)} false positives)</span>
+            <span className="muted"> (tuned for at most {pct(model.max_fpr)} false positives)</span>
           )}
         </dd>
-        <dt>Held-out test set</dt>
-        <dd>
-          precision {pct(atThreshold.precision)} · recall {pct(atThreshold.recall)} · false-positive
-          rate {pct(atThreshold.false_positive_rate)} · ROC AUC {model.metrics.roc_auc}
-        </dd>
+        <dt>Precision</dt>
+        <dd>{pct(atThreshold.precision)} of flagged apps were malware</dd>
+        <dt>Recall</dt>
+        <dd>{pct(atThreshold.recall)} of malware was flagged</dd>
+        <dt>False-positive rate</dt>
+        <dd>{pct(atThreshold.false_positive_rate)} of benign apps were flagged</dd>
+        <dt>ROC AUC</dt>
+        <dd>{model.metrics.roc_auc}</dd>
       </dl>
 
-      <p className="warning-text">
-        Trained on the Drebin dataset (apps from 2010–2012). Accuracy on modern malware is likely
-        lower than these figures; treat the verdict as one signal among several.
+      <p className="caution">
+        Measured on a held-out part of the Drebin dataset, whose apps date from 2010–2012.
+        Accuracy on modern malware is likely lower, so treat the verdict as one signal among
+        several.
       </p>
 
-      <div className="table-section">
-        <h4>Most influential indicators overall (mean |SHAP|)</h4>
-        <ol className="importance-list">
-          {model.global_importance.slice(0, 10).map((row) => {
-            const max = model.global_importance[0].importance || 1;
-            return (
-              <li key={row.feature}>
-                <span className="mono">{row.feature}</span>
-                <span className="importance-bar" style={{ width: `${(row.importance / max) * 100}%` }} />
-              </li>
-            );
-          })}
+      <section>
+        <h3>Most influential indicators overall</h3>
+        <p className="hint section-note">Mean absolute SHAP value across the test set.</p>
+        <ol className="importance">
+          {model.global_importance.slice(0, 10).map((row) => (
+            <li key={row.feature}>
+              <span className="code" title={row.feature}>{row.feature}</span>
+              <span className="importance-bar" style={{ width: `${(row.importance / maxImportance) * 100}%` }} />
+            </li>
+          ))}
         </ol>
-      </div>
+      </section>
 
       <DriftReport apiKey={apiKey} />
     </div>

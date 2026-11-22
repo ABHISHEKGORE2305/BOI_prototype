@@ -1,9 +1,9 @@
-import { Loader2 } from 'lucide-react';
+import { Check, Loader2 } from 'lucide-react';
 
 const STEPS = [
-  { key: 'uploaded', label: 'APK received and validated' },
-  { key: 'queued', label: 'Waiting for an analysis worker' },
-  { key: 'processing', label: 'Static extraction, classification and SHAP attribution' },
+  { key: 'uploaded', label: 'Upload and validate the APK' },
+  { key: 'queued', label: 'Wait for an analysis worker' },
+  { key: 'processing', label: 'Extract indicators, classify and explain' },
   { key: 'completed', label: 'Results ready' },
 ];
 
@@ -18,30 +18,35 @@ export default function PipelineProgress({ phase, task, filename, pollError }) {
   const active = currentStep(phase, task);
 
   return (
-    <div className="pipeline-loader animate-fade">
-      <div className="pipeline-header">
-        <Loader2 size={40} className="spin accent-red" aria-hidden="true" />
-        <h2>Analysing {filename}</h2>
-        <p>
-          {phase === 'uploading'
-            ? 'Uploading…'
-            : 'Large APKs can take a few minutes. You can leave this page; the scan keeps running.'}
-        </p>
-      </div>
+    <div className="progress">
+      <h1>Scanning {filename}</h1>
+      <p className="progress-lede">
+        {phase === 'uploading'
+          ? 'Uploading…'
+          : 'Large APKs can take a few minutes. You can leave this page; the scan keeps running and appears under Your scans.'}
+      </p>
 
-      <ol className="stepper-container" aria-live="polite">
+      <ol className="steps" aria-live="polite">
         {STEPS.map((step, index) => {
-          const state = index < active ? 'completed' : index === active ? 'active' : '';
+          const state = index < active ? 'is-done' : index === active ? 'is-active' : '';
           return (
-            <li key={step.key} className={`step-item ${state}`}>
-              <span className="step-indicator">{index < active ? '✓' : index + 1}</span>
-              <span className="step-label">{step.label}</span>
+            <li key={step.key} className={`step ${state}`} aria-current={index === active ? 'step' : undefined}>
+              <span className="step-dot" aria-hidden="true">
+                {index < active ? (
+                  <Check size={14} strokeWidth={3} />
+                ) : index === active ? (
+                  <Loader2 size={14} className="spin" />
+                ) : (
+                  index + 1
+                )}
+              </span>
+              <span>{step.label}</span>
             </li>
           );
         })}
       </ol>
 
-      {pollError && <p className="warning-text">Connection problem: {pollError} Retrying…</p>}
+      {pollError && <p className="inline-warning">Connection problem: {pollError} Retrying…</p>}
     </div>
   );
 }

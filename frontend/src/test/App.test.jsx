@@ -81,7 +81,7 @@ test('shows real results after the task completes, then the report', async () =>
 
   await uploadSample();
 
-  expect(await screen.findByText('97.5/100')).toBeInTheDocument();
+  expect(await screen.findByText('97.5%')).toBeInTheDocument();
   expect(screen.getByText('Malicious')).toBeInTheDocument();
   expect(await screen.findByRole('heading', { name: 'Executive Summary' })).toBeInTheDocument();
   expect(screen.getByText('steals SMS')).toBeInTheDocument();
@@ -98,7 +98,7 @@ test('a failed analysis shows the error, never fabricated results', async () => 
   await uploadSample();
 
   expect(await screen.findByRole('alert')).toHaveTextContent('BadZipFile: corrupt');
-  expect(screen.queryByText(/\/100/)).not.toBeInTheDocument();
+  expect(screen.queryByText(/probability of malware/)).not.toBeInTheDocument();
   expect(screen.queryByText(/Sample data/)).not.toBeInTheDocument();
 });
 
@@ -109,7 +109,7 @@ test('an unreachable backend shows a connection error instead of demo data', asy
   await uploadSample();
 
   expect(await screen.findByRole('alert')).toHaveTextContent('Cannot reach the Nexus-Sec API');
-  expect(screen.queryByText(/\/100/)).not.toBeInTheDocument();
+  expect(screen.queryByText(/probability of malware/)).not.toBeInTheDocument();
 });
 
 test('rejects non-APK files before uploading', async () => {
@@ -130,6 +130,24 @@ test('API key errors explain how to fix them', async () => {
   await uploadSample();
 
   expect(await screen.findByRole('alert')).toHaveTextContent('Enter it in the sidebar');
+  // The upload area stays available so the user can retry straight away
+  expect(screen.getByLabelText('Upload APK file')).toBeEnabled();
+});
+
+test('the verdict shows where the score sits relative to the threshold', async () => {
+  mockApi({
+    upload: () => json({ task_id: 't1', status: 'queued', cached: false }, 202),
+    taskResponses: [() => json(completedTask())],
+  });
+  render(<App pollOptions={FAST_POLL} />);
+
+  await uploadSample();
+
+  expect(await screen.findByRole('heading', { name: 'Malicious' })).toBeInTheDocument();
+  expect(screen.getByText(/Malware probability 97.5 out of 100. The model flags apps above 62.5./)).toBeInTheDocument();
+  // SHAP rows name the feature and the direction it pushed the score
+  expect(screen.getByText('SEND_SMS', { selector: '.shap-name .code' })).toBeInTheDocument();
+  expect(screen.getByText(/\+1\.20/, { selector: '.shap-value' })).toHaveTextContent('towards malware');
 });
 
 test('demo mode is opt-in and clearly labelled', async () => {
@@ -142,7 +160,7 @@ test('demo mode is opt-in and clearly labelled', async () => {
 
   expect(screen.getByText(/Sample data for illustration only/)).toBeInTheDocument();
   // Exports are only offered for real scans
-  expect(screen.getByRole('button', { name: /Download raw JSON/ })).toBeDisabled();
+  expect(screen.queryByRole('button', { name: /Download JSON/ })).not.toBeInTheDocument();
 });
 
 test('LLM failure keeps the verdict visible', async () => {
@@ -155,7 +173,7 @@ test('LLM failure keeps the verdict visible', async () => {
   await uploadSample();
 
   expect(await screen.findByText(/could not be generated/)).toBeInTheDocument();
-  expect(screen.getByText('97.5/100')).toBeInTheDocument();
+  expect(screen.getByText('97.5%')).toBeInTheDocument();
 });
 
 test('the API key is sent with requests once saved', async () => {
@@ -163,7 +181,7 @@ test('the API key is sent with requests once saved', async () => {
   render(<App pollOptions={FAST_POLL} />);
   const user = userEvent.setup();
 
-  await user.type(screen.getByLabelText(/server requires one/), 'secret-key');
+  await user.type(screen.getByLabelText('API key'), 'secret-key');
   await user.click(screen.getByRole('button', { name: 'Save API key' }));
 
   await waitFor(() => {

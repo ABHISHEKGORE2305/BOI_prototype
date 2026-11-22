@@ -7,15 +7,15 @@ export const CATEGORY_LABELS = {
 };
 
 export function riskLevel(score, verdict) {
-  if (score == null) return { label: 'UNKNOWN', tone: 'muted' };
+  if (score == null) return { label: 'Unknown', tone: 'muted' };
   if (verdict === 'malicious') {
     return score >= 90
-      ? { label: 'CRITICAL RISK', tone: 'critical' }
-      : { label: 'HIGH RISK', tone: 'high' };
+      ? { label: 'Critical risk', tone: 'critical' }
+      : { label: 'High risk', tone: 'high' };
   }
   return score >= 25
-    ? { label: 'SUSPICIOUS — REVIEW', tone: 'medium' }
-    : { label: 'LOW RISK', tone: 'clean' };
+    ? { label: 'Needs review', tone: 'medium' }
+    : { label: 'Low risk', tone: 'clean' };
 }
 
 export function shortFeatureName(name, max = 32) {

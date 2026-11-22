@@ -1,8 +1,9 @@
 import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
-import { AlertTriangle, FlaskConical, X } from 'lucide-react';
+import { AlertTriangle, FlaskConical } from 'lucide-react';
 import { getModelInfo, listTasks, uploadApk } from './api';
 import PipelineProgress from './components/PipelineProgress';
 import Sidebar from './components/Sidebar';
+import Uploader from './components/Uploader';
 import { DEMO_TASK } from './data/demoResult';
 import { isAnalysisDone, useTaskPolling } from './hooks/useTaskPolling';
 import { validateApk } from './lib/validate';
@@ -40,8 +41,8 @@ function storeKey(key) {
 
 function ErrorBanner({ title, message }) {
   return (
-    <div className="nexus-card error-banner animate-fade" role="alert">
-      <AlertTriangle size={20} aria-hidden="true" />
+    <div className="alert" role="alert">
+      <AlertTriangle size={18} aria-hidden="true" />
       <div>
         <strong>{title}</strong>
         <p>{message}</p>
@@ -50,17 +51,36 @@ function ErrorBanner({ title, message }) {
   );
 }
 
-function EmptyState({ onDemo }) {
+function StartScreen({ onFile, onDemo, error }) {
   return (
-    <div className="empty-state animate-fade">
-      <h2>Upload an APK to begin</h2>
-      <p>
-        Nexus-Sec extracts static indicators with Androguard, scores them with a calibrated LightGBM
-        model, explains the decision with SHAP and drafts an analyst report.
+    <div className="start">
+      {error}
+      <h1>Scan an Android app</h1>
+      <p className="start-lede">
+        Upload an APK to see how likely it is to be malware, which indicators drove that score, and
+        what to do next. Nothing is installed or run; the app is only inspected.
       </p>
-      <button type="button" className="btn-action btn-inline" onClick={onDemo}>
-        <FlaskConical size={16} aria-hidden="true" /> View a sample result
-      </button>
+      <Uploader onFile={onFile} />
+      <p className="start-alt">
+        No APK to hand?{' '}
+        <button type="button" className="btn btn-link" onClick={onDemo}>
+          View a sample result
+        </button>
+      </p>
+      <ol className="start-steps">
+        <li>
+          <strong>Static inspection</strong>
+          Androguard reads the manifest, bytecode and strings.
+        </li>
+        <li>
+          <strong>Calibrated verdict</strong>
+          A LightGBM model scores 215 Drebin indicators.
+        </li>
+        <li>
+          <strong>Explanation</strong>
+          SHAP shows why, and an LLM drafts an analyst report.
+        </li>
+      </ol>
     </div>
   );
 }
@@ -135,6 +155,7 @@ export default function App({ pollOptions }) {
 
   const selectTask = (id) => {
     reset();
+    window.scrollTo({ top: 0 });
     prefetchDashboard();
     setTaskId(id);
   };
@@ -143,19 +164,25 @@ export default function App({ pollOptions }) {
   if (demo) {
     content = (
       <>
-        <div className="demo-banner" role="status">
+        <div className="notice" role="status">
           <FlaskConical size={16} aria-hidden="true" />
-          Sample data for illustration only — this is not the result of a real scan.
+          Sample data for illustration only. This is not the result of a real scan.
         </div>
-        <Dashboard task={DEMO_TASK} model={model.info} modelError={model.error} apiKey={apiKey} />
+        <Dashboard task={DEMO_TASK} model={model.info} modelError={model.error} apiKey={apiKey} exportable={false} />
       </>
     );
   } else if (uploadError) {
-    content = <ErrorBanner title="Upload failed" message={uploadError} />;
+    content = (
+      <StartScreen
+        onFile={handleFile}
+        onDemo={() => setDemo(true)}
+        error={<ErrorBanner title={`Couldn't upload ${selectedName || 'the file'}`} message={uploadError} />}
+      />
+    );
   } else if (uploading) {
     content = <PipelineProgress phase="uploading" filename={selectedName} />;
   } else if (taskId && !task && pollError) {
-    content = <ErrorBanner title="Could not load scan" message={pollError} />;
+    content = <ErrorBanner title="Couldn't load this scan" message={pollError} />;
   } else if (task?.status === 'failed') {
     content = (
       <ErrorBanner
@@ -167,7 +194,7 @@ export default function App({ pollOptions }) {
     content = gaveUp ? (
       <ErrorBanner
         title="Still waiting for the analysis worker"
-        message="Stopped polling. Check that the Celery worker is running; the scan will appear under Recent scans when it finishes."
+        message="Stopped checking for results. Make sure the Celery worker is running; the scan will appear under Your scans when it finishes."
       />
     ) : (
       <PipelineProgress phase="tracking" task={task} filename={task?.filename || selectedName} pollError={pollError} />
@@ -175,56 +202,28 @@ export default function App({ pollOptions }) {
   } else if (task) {
     content = (
       <>
-        {pollError && <p className="warning-text">Connection problem while refreshing: {pollError}</p>}
-        <Dashboard task={task} model={model.info} modelError={model.error} apiKey={apiKey} />
+        {pollError && <p className="inline-warning">Connection problem while refreshing: {pollError}</p>}
+        <Dashboard task={task} model={model.info} modelError={model.error} apiKey={apiKey} exportable />
       </>
     );
   } else {
-    content = <EmptyState onDemo={() => setDemo(true)} />;
+    content = <StartScreen onFile={handleFile} onDemo={() => setDemo(true)} />;
   }
 
-  const showingResult = demo || Boolean(task) || Boolean(uploadError);
-
   return (
-    <div className="app-container">
+    <div className="app">
       <Sidebar
-        onFile={handleFile}
-        uploading={uploading}
-        selectedName={selectedName}
+        onNewScan={reset}
         apiKey={apiKey}
         onApiKeyChange={handleApiKey}
         history={history}
         activeId={taskId}
         onSelectTask={selectTask}
         onRefreshHistory={refreshHistory}
-        exportableTask={!demo && task?.status === 'completed' ? task : null}
       />
 
-      <main className="main-content">
-        <div className="main-header">
-          <div>
-            {demo && <span className="badge badge-demo">Demo sample</span>}
-            {!demo && task?.status === 'completed' && (
-              <span className="badge badge-live">
-                {task.filename}
-                {task.cached_from ? ' · cached result' : ''}
-              </span>
-            )}
-          </div>
-          {showingResult && (
-            <button type="button" className="btn-small" onClick={reset}>
-              <X size={14} aria-hidden="true" /> Clear
-            </button>
-          )}
-        </div>
-
-        <Suspense
-          fallback={
-            <p className="nexus-card loading-text" role="status">
-              Loading results…
-            </p>
-          }
-        >
+      <main className="workspace">
+        <Suspense fallback={<p className="loading" role="status">Loading results…</p>}>
           {content}
         </Suspense>
       </main>

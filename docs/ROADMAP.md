@@ -72,6 +72,14 @@ delivered. Items that could not be completed are listed at the end with the reas
 - Lazy-loaded dashboard: initial JS 216 kB → 54 kB gzipped.
 - README cut to an overview; reference material moved to `docs/API.md`, `docs/SECURITY.md`, `docs/OPERATIONS.md`.
 
+## Phase 7 — Professional frontend ✅
+
+- Replaced the neon "space-dark" theme (Orbitron, glow effects, all-caps labels, glass cards) with a calm case-file design: one report sheet per scan, verdict colours used only for the verdict, light and dark themes.
+- Verdict band with a probability ruler showing the score against the decision threshold, instead of a ring gauge that couldn't show how close the call was.
+- SHAP chart rebuilt as accessible HTML/CSS diverging bars; Recharts (350 kB) removed.
+- Self-hosted Atkinson Hyperlegible fonts; CSP no longer allows Google Fonts.
+- Exports moved next to the result they act on; upload errors keep the drop zone visible for retry; tables scroll instead of breaking identifiers on mobile.
+
 ---
 
 ## Not done, and why
